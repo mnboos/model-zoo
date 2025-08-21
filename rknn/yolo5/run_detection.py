@@ -5,7 +5,7 @@ import time
 import sys
 import numpy as np
 import cv2
-from rknn.api import RKNN
+from rknnlite.api import RKNNLite
 
 # Model from https://github.com/airockchip/rknn_model_zoo
 ONNX_MODEL = 'yolov5s_relu.onnx'
@@ -235,7 +235,7 @@ def letterbox(im, new_shape=(640, 640), color=(0, 0, 0)):
 if __name__ == '__main__':
 
     # Create RKNN object
-    rknn = RKNN(verbose=True)
+    rknn = RKNNLite(verbose=True)
 
     # pre-process config
     print('--> Config model')
@@ -268,7 +268,14 @@ if __name__ == '__main__':
     # Inference
     print('--> Running model')
     img2 = np.expand_dims(img, 0)
-    outputs = rknn.inference(inputs=[img2], data_format=['nhwc'])
+    td = 0
+    nr_runs = 50
+    for _ in range(nr_runs):
+        t1 = time.perf_counter()
+        outputs = rknn.inference(inputs=[img2], data_format=['nhwc'])
+        t2 = time.perf_counter() - t1
+        td += t2
+    print("Total inference: ", (td/nr_runs*1000), "ms")
     np.save('./onnx_yolov5_0.npy', outputs[0])
     np.save('./onnx_yolov5_1.npy', outputs[1])
     np.save('./onnx_yolov5_2.npy', outputs[2])
